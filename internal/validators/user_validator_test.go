@@ -12,7 +12,7 @@ import (
 )
 
 func TestValidateUserDetails_ValidUserDetails(t *testing.T) {
-	user := models.NewUser(primitive.NilObjectID, "John", "Doe", "good@example.com", 25)
+	user := models.User{ID: primitive.NilObjectID, FirstName: "John", LastName: "Doe", Email: "good@example.com", Age: 25}
 
 	userRepoMock := new(repo.UserRepoMock)
 	validator := &UserValidator{
@@ -29,7 +29,7 @@ func TestValidateUserDetails_ValidUserDetails(t *testing.T) {
 }
 
 func TestValidateUserDetails_UserIsExisted(t *testing.T) {
-	user := models.NewUser(primitive.NilObjectID, "John", "Doe", "a@a.a", 20)
+	user := models.User{ID: primitive.NilObjectID, FirstName: "John", LastName: "Doe", Email: "a@a.a", Age: 20}
 
 	userRepoMock := new(repo.UserRepoMock)
 	validator := &UserValidator{
@@ -47,7 +47,7 @@ func TestValidateUserDetails_UserIsExisted(t *testing.T) {
 }
 
 func TestValidateUserDetails_UserNameIsMissing(t *testing.T) {
-	user := models.NewUser(primitive.NilObjectID, "", "Doe", "a@a.a", 20)
+	user := models.User{ID: primitive.NilObjectID, FirstName: "", LastName: "Doe", Email: "a@a.a", Age: 20}
 
 	userRepoMock := new(repo.UserRepoMock)
 	validator := &UserValidator{
@@ -57,7 +57,7 @@ func TestValidateUserDetails_UserNameIsMissing(t *testing.T) {
 	expectedOutput := errs.NewErrorMessage(errs.ResponseValidationFailed, errs.ErrorNameRequired)
 	expectedOutputPointer := &expectedOutput
 
-	userRepoMock.On("ValidaiteUserExisted", mock.Anything, mock.Anything).Return(false)
+	userRepoMock.On("ValidateUserExisted", mock.Anything, mock.Anything).Return(false)
 
 	result := validator.ValidateUserDetails(user)
 
@@ -65,7 +65,7 @@ func TestValidateUserDetails_UserNameIsMissing(t *testing.T) {
 }
 
 func TestValidateUserDetails_UserEmailIsMissing(t *testing.T) {
-	user := models.NewUser(primitive.NewObjectID(), "John", "Doe", "", 20)
+	user := models.User{ID: primitive.NewObjectID(), FirstName: "John", LastName: "Doe", Email: "", Age: 20}
 
 	userRepoMock := new(repo.UserRepoMock)
 	validator := &UserValidator{
@@ -83,7 +83,7 @@ func TestValidateUserDetails_UserEmailIsMissing(t *testing.T) {
 }
 
 func TestValidateUserDetails_InvalidUserEmailFormat(t *testing.T) {
-	user := models.NewUser(primitive.NewObjectID(), "John", "Doe", "aa.a", 20)
+	user := models.User{ID: primitive.NewObjectID(), FirstName: "John", LastName: "Doe", Email: "aa.a", Age: 20}
 
 	userRepoMock := new(repo.UserRepoMock)
 	validator := &UserValidator{
@@ -101,7 +101,7 @@ func TestValidateUserDetails_InvalidUserEmailFormat(t *testing.T) {
 }
 
 func TestValidateUserDetails_InvalidUserAge(t *testing.T) {
-	user := models.NewUser(primitive.NilObjectID, "John", "Doe", "a@a.a", 16)
+	user := models.User{ID: primitive.NilObjectID, FirstName: "John", LastName: "Doe", Email: "aa.a", Age: 16}
 
 	userRepoMock := new(repo.UserRepoMock)
 	validator := &UserValidator{
@@ -119,7 +119,7 @@ func TestValidateUserDetails_InvalidUserAge(t *testing.T) {
 }
 
 func TestValidateUserDetails_MultipleUserDetailsErrors(t *testing.T) {
-	user := models.NewUser(primitive.NilObjectID, "", "Doe", "aa.a", 20)
+	user := models.User{ID: primitive.NilObjectID, FirstName: "", LastName: "Doe", Email: "aa.a", Age: 20}
 
 	userRepoMock := new(repo.UserRepoMock)
 	validator := &UserValidator{

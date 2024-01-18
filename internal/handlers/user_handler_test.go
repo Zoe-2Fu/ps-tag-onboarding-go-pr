@@ -27,8 +27,8 @@ func TestSave_StatusCreated(t *testing.T) {
 	validatorMock := new(validator.UserValidatorMock)
 
 	userHandler := &UserHandler{
-		userRepo:  userRepoMock,
-		validator: validatorMock,
+		UserRepo:  userRepoMock,
+		Validator: validatorMock,
 	}
 
 	userRepoMock.On("Save", mock.Anything, mock.Anything).Return(primitive.NewObjectID(), nil)
@@ -50,13 +50,14 @@ func TestFind_StatusOK(t *testing.T) {
 	validatorMock := new(validator.UserValidatorMock)
 
 	userHandler := &UserHandler{
-		userRepo:  userRepoMock,
-		validator: validatorMock,
+		UserRepo:  userRepoMock,
+		Validator: validatorMock,
 	}
 
 	userID := primitive.NewObjectID()
-	expectedUser := models.NewUser(userID, "John", "Doe", "a@a.a", 20)
-	expectedReponseBody, _ := json.Marshal(expectedUser)
+	expectedUser := models.User{ID: userID, FirstName: "John", LastName: "Doe", Email: "a@a.a", Age: 20}
+
+	expectedResponseBody, _ := json.Marshal(expectedUser)
 
 	userRepoMock.On("Find", mock.Anything, mock.Anything).Return(expectedUser, nil)
 	validatorMock.On("ValidateUserDetails", mock.Anything, mock.Anything).Return((*errs.ErrorMessage)(nil))
@@ -71,7 +72,7 @@ func TestFind_StatusOK(t *testing.T) {
 	// assert
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, rec.Code)
-	assert.JSONEq(t, string(expectedReponseBody), rec.Body.String())
+	assert.JSONEq(t, string(expectedResponseBody), rec.Body.String())
 }
 
 func TestFind_StatusNotFound(t *testing.T) {
@@ -82,8 +83,8 @@ func TestFind_StatusNotFound(t *testing.T) {
 	validatorMock := new(validator.UserValidatorMock)
 
 	userHandler := &UserHandler{
-		userRepo:  userRepoMock,
-		validator: validatorMock,
+		UserRepo:  userRepoMock,
+		Validator: validatorMock,
 	}
 
 	userID := "123"

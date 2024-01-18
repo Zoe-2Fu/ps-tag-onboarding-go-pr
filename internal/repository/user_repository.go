@@ -2,6 +2,7 @@ package repo
 
 import (
 	"context"
+	"errors"
 	"net/http"
 
 	errs "github.com/Zoe-2Fu/ps-tag-onboarding-go-pr/internal/constants"
@@ -28,7 +29,11 @@ func (r *UserRepository) Find(ctx echo.Context, id string) (models.User, error) 
 	objID, _ := primitive.ObjectIDFromHex(id)
 	err := r.db.Collection(userCollection).FindOne(ctx.Request().Context(), bson.M{"_id": objID}).Decode(&user)
 	if err != nil {
-		return models.User{}, err
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return models.User{}, mongo.ErrNoDocuments
+		} else {
+			return models.User{}, errors.New("failed to decode user from database")
+		}
 	}
 	return user, nil
 }
@@ -65,7 +70,7 @@ func (r *UserRepository) ValidateUserExisted(user models.User) bool {
 
 	count, err := r.db.Collection(userCollection).CountDocuments(context.Background(), filter)
 	if err != nil {
-		return true
+		return false
 	}
 
 	if count > 0 {
