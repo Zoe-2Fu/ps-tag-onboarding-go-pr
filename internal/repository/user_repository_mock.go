@@ -23,7 +23,7 @@ func (m *UserRepoMock) Save(c context.Context, user models.User) (primitive.Obje
 	return args.Get(0).(primitive.ObjectID), args.Error(1)
 }
 
-func (m *UserRepoMock) ValidateUserExisted(user models.User) bool {
+func (m *UserRepoMock) ValidateUserExisted(user models.User) (bool, error) {
 	args := m.Called(user)
-	return args.Bool(0)
+	return args.Bool(0), args.Error(1)
 }

@@ -27,7 +27,12 @@ func (r *UserRepository) Find(ctx echo.Context, id string) (models.User, error) 
 	var user models.User
 
 	objID, _ := primitive.ObjectIDFromHex(id)
-	err := r.db.Collection(userCollection).FindOne(ctx.Request().Context(), bson.M{"_id": objID}).Decode(&user)
+	result := r.db.Collection(userCollection).FindOne(ctx.Request().Context(), bson.M{"_id": objID})
+	if result == nil {
+		return models.User{}, errors.New("can't find user from database")
+	}
+
+	err := result.Decode(&user)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return models.User{}, mongo.ErrNoDocuments
@@ -65,17 +70,17 @@ func (r *UserRepository) Save(ctx context.Context, user models.User) (primitive.
 	return insertedID, err
 }
 
-func (r *UserRepository) ValidateUserExisted(user models.User) bool {
+func (r *UserRepository) ValidateUserExisted(user models.User) (bool, error) {
 	filter := bson.M{"firstname": user.FirstName, "lastname": user.LastName}
 
 	count, err := r.db.Collection(userCollection).CountDocuments(context.Background(), filter)
 	if err != nil {
-		return false
+		return false, err
 	}
 
 	if count > 0 {
-		return true
+		return true, nil
 	}
 
-	return false
+	return false, nil
 }

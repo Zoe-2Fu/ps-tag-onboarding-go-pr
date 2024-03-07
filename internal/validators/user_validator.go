@@ -8,7 +8,7 @@ import (
 )
 
 type userRepo interface {
-	ValidateUserExisted(user models.User) bool
+	ValidateUserExisted(user models.User) (bool, error)
 }
 
 type UserValidator struct {
@@ -25,7 +25,7 @@ func (v *UserValidator) ValidateUserDetails(user models.User) *errs.ErrorMessage
 	if len(user.FirstName) == 0 || len(user.LastName) == 0 {
 		errorDetails = append(errorDetails, errs.ErrorNameRequired)
 	} else {
-		isExist := v.userRepo.ValidateUserExisted(user)
+		isExist, _ := v.userRepo.ValidateUserExisted(user)
 		if isExist {
 			errMsg := errs.NewErrorMessage(errs.ResponseValidationFailed, errs.ErrorNameUnique)
 

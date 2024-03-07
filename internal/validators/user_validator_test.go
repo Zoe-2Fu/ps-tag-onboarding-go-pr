@@ -11,130 +11,86 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func TestValidateUserDetails_ValidUserDetails(t *testing.T) {
-	user := models.User{ID: primitive.NilObjectID, FirstName: "John", LastName: "Doe", Email: "good@example.com", Age: 25}
-
-	userRepoMock := new(repo.UserRepoMock)
-	validator := &UserValidator{
-		userRepo: userRepoMock,
-	}
-
-	expectedOutput := (*errs.ErrorMessage)(nil)
-
-	userRepoMock.On("ValidateUserExisted", mock.Anything, mock.Anything).Return(false)
-
-	result := validator.ValidateUserDetails(user)
-
-	assert.Nil(t, result, expectedOutput)
-}
-
-func TestValidateUserDetails_UserIsExisted(t *testing.T) {
-	user := models.User{ID: primitive.NilObjectID, FirstName: "John", LastName: "Doe", Email: "a@a.a", Age: 20}
-
-	userRepoMock := new(repo.UserRepoMock)
-	validator := &UserValidator{
-		userRepo: userRepoMock,
-	}
-
-	expectedOutput := errs.NewErrorMessage(errs.ResponseValidationFailed, errs.ErrorNameUnique)
-	expectedOutputPointer := &expectedOutput
-
-	userRepoMock.On("ValidateUserExisted", mock.Anything, mock.Anything).Return(true)
-
-	result := validator.ValidateUserDetails(user)
-
-	assert.Equal(t, expectedOutputPointer, result)
-}
-
-func TestValidateUserDetails_UserNameIsMissing(t *testing.T) {
-	user := models.User{ID: primitive.NilObjectID, FirstName: "", LastName: "Doe", Email: "a@a.a", Age: 20}
-
-	userRepoMock := new(repo.UserRepoMock)
-	validator := &UserValidator{
-		userRepo: userRepoMock,
-	}
-
-	expectedOutput := errs.NewErrorMessage(errs.ResponseValidationFailed, errs.ErrorNameRequired)
-	expectedOutputPointer := &expectedOutput
-
-	userRepoMock.On("ValidateUserExisted", mock.Anything, mock.Anything).Return(false)
-
-	result := validator.ValidateUserDetails(user)
-
-	assert.Equal(t, expectedOutputPointer, result)
-}
-
-func TestValidateUserDetails_UserEmailIsMissing(t *testing.T) {
-	user := models.User{ID: primitive.NewObjectID(), FirstName: "John", LastName: "Doe", Email: "", Age: 20}
-
-	userRepoMock := new(repo.UserRepoMock)
-	validator := &UserValidator{
-		userRepo: userRepoMock,
-	}
-
-	expectedOutput := errs.NewErrorMessage(errs.ResponseValidationFailed, errs.ErrorEmailRequired)
-	expectedOutputPointer := &expectedOutput
-
-	userRepoMock.On("ValidateUserExisted", mock.Anything, mock.Anything).Return(false)
-
-	result := validator.ValidateUserDetails(user)
-
-	assert.Equal(t, expectedOutputPointer, result)
-}
-
-func TestValidateUserDetails_InvalidUserEmailFormat(t *testing.T) {
-	user := models.User{ID: primitive.NewObjectID(), FirstName: "John", LastName: "Doe", Email: "aa.a", Age: 20}
-
-	userRepoMock := new(repo.UserRepoMock)
-	validator := &UserValidator{
-		userRepo: userRepoMock,
-	}
-
-	expectedOutput := errs.NewErrorMessage(errs.ResponseValidationFailed, errs.ErrorEmailFormat)
-	expectedOutputPointer := &expectedOutput
-
-	userRepoMock.On("ValidateUserExisted", mock.Anything, mock.Anything).Return(false)
-
-	result := validator.ValidateUserDetails(user)
-
-	assert.Equal(t, expectedOutputPointer, result)
-}
-
-func TestValidateUserDetails_InvalidUserAge(t *testing.T) {
-	user := models.User{ID: primitive.NilObjectID, FirstName: "John", LastName: "Doe", Email: "aa.a", Age: 16}
-
-	userRepoMock := new(repo.UserRepoMock)
-	validator := &UserValidator{
-		userRepo: userRepoMock,
-	}
-
-	expectedOutput := errs.NewErrorMessage(errs.ResponseValidationFailed, errs.ErrorAgeMinimum)
-	expectedOutputPointer := &expectedOutput
-
-	userRepoMock.On("ValidateUserExisted", mock.Anything, mock.Anything).Return(false)
-
-	result := validator.ValidateUserDetails(user)
-
-	assert.Equal(t, expectedOutputPointer, result)
-}
-
-func TestValidateUserDetails_MultipleUserDetailsErrors(t *testing.T) {
-	user := models.User{ID: primitive.NilObjectID, FirstName: "", LastName: "Doe", Email: "aa.a", Age: 20}
-
-	userRepoMock := new(repo.UserRepoMock)
-	validator := &UserValidator{
-		userRepo: userRepoMock,
-	}
-
-	expectedOutput := errs.ErrorMessage{
+func TestValidateUserDetails(t *testing.T) {
+	nilErrMsg := (*errs.ErrorMessage)(nil)
+	userExistedErrMsg := errs.NewErrorMessage(errs.ResponseValidationFailed, errs.ErrorNameUnique)
+	userNameMissingErrMsg := errs.NewErrorMessage(errs.ResponseValidationFailed, errs.ErrorNameRequired)
+	userEmailMissingErrMsg := errs.NewErrorMessage(errs.ResponseValidationFailed, errs.ErrorEmailRequired)
+	userEmailFormatErrMsg := errs.NewErrorMessage(errs.ResponseValidationFailed, errs.ErrorEmailFormat)
+	userAgeErrMsg := errs.NewErrorMessage(errs.ResponseValidationFailed, errs.ErrorAgeMinimum)
+	multiUserDetailErrMsg := errs.ErrorMessage{
 		Error:   errs.ResponseValidationFailed,
 		Details: []string{errs.ErrorNameRequired, errs.ErrorEmailFormat},
 	}
-	expectedOutputPointer := &expectedOutput
 
-	userRepoMock.On("ValidateUserExisted", mock.Anything, mock.Anything).Return(false)
+	testCases := []struct {
+		name           string
+		user           models.User
+		isValidDetails bool
+		isUserExisted  bool
+		expectedOutput *errs.ErrorMessage
+	}{
+		{
+			name:           "Valid user details",
+			user:           models.User{ID: primitive.NilObjectID, FirstName: "John", LastName: "Doe", Email: "good@example.com", Age: 25},
+			isValidDetails: true,
+			isUserExisted:  false,
+			expectedOutput: nilErrMsg,
+		}, {
+			name:           "User is existed",
+			user:           models.User{ID: primitive.NilObjectID, FirstName: "John", LastName: "Doe", Email: "a@a.a", Age: 20},
+			isValidDetails: false,
+			isUserExisted:  true,
+			expectedOutput: &userExistedErrMsg,
+		}, {
+			name:           "User name is missing",
+			user:           models.User{ID: primitive.NilObjectID, FirstName: "", LastName: "Doe", Email: "a@a.a", Age: 20},
+			isValidDetails: false,
+			isUserExisted:  false,
+			expectedOutput: &userNameMissingErrMsg,
+		}, {
+			name:           "User email is missing",
+			user:           models.User{ID: primitive.NewObjectID(), FirstName: "John", LastName: "Doe", Email: "", Age: 20},
+			isValidDetails: false,
+			isUserExisted:  false,
+			expectedOutput: &userEmailMissingErrMsg,
+		}, {
+			name:           "Invalid user email format",
+			user:           models.User{ID: primitive.NewObjectID(), FirstName: "John", LastName: "Doe", Email: "aa.a", Age: 20},
+			isValidDetails: false,
+			isUserExisted:  false,
+			expectedOutput: &userEmailFormatErrMsg,
+		}, {
+			name:           "Invalid user age",
+			user:           models.User{ID: primitive.NilObjectID, FirstName: "John", LastName: "Doe", Email: "a@a.a", Age: 16},
+			isValidDetails: false,
+			isUserExisted:  false,
+			expectedOutput: &userAgeErrMsg,
+		}, {
+			name:           "Multiple user details errors",
+			user:           models.User{ID: primitive.NilObjectID, FirstName: "", LastName: "Doe", Email: "aa.a", Age: 20},
+			isValidDetails: false,
+			isUserExisted:  false,
+			expectedOutput: &multiUserDetailErrMsg,
+		},
+	}
 
-	result := validator.ValidateUserDetails(user)
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			userRepoMock := new(repo.UserRepoMock)
+			validator := &UserValidator{
+				userRepo: userRepoMock,
+			}
 
-	assert.Equal(t, expectedOutputPointer, result)
+			userRepoMock.On("ValidateUserExisted", mock.Anything, mock.Anything).Return(tc.isUserExisted, nil)
+
+			result := validator.ValidateUserDetails(tc.user)
+
+			if tc.isValidDetails {
+				assert.Nil(t, result, tc.expectedOutput)
+			} else {
+				assert.Equal(t, tc.expectedOutput, result)
+			}
+		})
+	}
 }
